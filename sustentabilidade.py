@@ -5,7 +5,7 @@ cont_transporte_nao_sustentavel = 0
 conexao = mysql.connector.connect(
     host="localhost",
     user="Davi",
-    password="JDM7Fqv",
+    password="<colocar_senha>",
     database="sustentabilidade"
 )
 cursor = conexao.cursor()
@@ -101,7 +101,7 @@ elif (cont_transporte_nao_sustentavel == 0):
 else:   
     transporte = "Moderada Sustentabilidade"
 
-print("\n// Resultado de {nome} //")
+print(f"\n// Resultado de {nome} //")
 print(f"Data: {data}")
 print(f"Consumo de Água: {media_agua}")
 print(f"Consumo de Energia: {media_energia}")
