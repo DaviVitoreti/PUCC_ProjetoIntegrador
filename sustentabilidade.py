@@ -4,7 +4,7 @@ menu = ""
 conexao = mysql.connector.connect(
     host="localhost",
     user="Davi",
-    password="JDM7Fqv",
+    password="<colocar senha>",
     database="sustentabilidade"
 )
 cursor = conexao.cursor()
