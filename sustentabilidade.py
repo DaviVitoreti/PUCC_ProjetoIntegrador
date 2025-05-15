@@ -1,7 +1,9 @@
 import mysql.connector
 global last_id
 menu = ""
+ctrl_id = 0
 
+# Conexão com o banco de dados
 conexao = mysql.connector.connect(
     host="localhost",
     user="Davi",
@@ -46,7 +48,9 @@ def susten_agua(consumo_agua):
         media_agua = "Baixa Sustentabilidade"
     else:
         media_agua = "Moderada Sustentabilidade"
-    return media_agua
+    sql = "UPDATE sustentabilidade SET media_agua = %s WHERE id = %s"
+    cursor.execute(sql, (media_agua, last_id))
+    conexao.commit()
 
 def susten_energia(consumo_energia):
     if (consumo_energia < 5):
@@ -55,7 +59,9 @@ def susten_energia(consumo_energia):
         media_energia = "Baixa Sustetabilidade"
     else:
         media_energia = "Moderada Sustetabilidade"
-    return media_energia
+    sql = "UPDATE sustentabilidade SET media_energia = %s WHERE id = %s"
+    cursor.execute(sql, (media_energia, last_id))
+    conexao.commit()
 
 def susten_residuos(geracao_residuos):
     geracao_residuos_nao_reciclaveis = 100 - geracao_residuos
@@ -65,7 +71,13 @@ def susten_residuos(geracao_residuos):
         media_residuos = "Baixa Sustetabilidade"
     else:
         media_residuos = "Moderada Sustetabilidade"
-    return media_residuos, geracao_residuos_nao_reciclaveis
+    sql = "UPDATE sustentabilidade SET media_residuos = %s WHERE id = %s"
+    cursor.execute(sql, (media_residuos, last_id))
+    conexao.commit()
+    sql = "UPDATE cadastro SET residuos_nao_reciclaveis = %s WHERE id = %s"
+    cursor.execute(sql, (geracao_residuos_nao_reciclaveis, last_id))
+    conexao.commit()
+    return geracao_residuos_nao_reciclaveis
 
 def susten_transporte():
     cont_transporte_sustentavel = 0
@@ -105,22 +117,12 @@ def susten_transporte():
         transporte = "Alta Sustentabilidade"
     else:   
         transporte = "Moderada Sustentabilidade"
+    sql = "UPDATE sustentabilidade SET transporte = %s WHERE id = %s"
+    cursor.execute(sql, (transporte, last_id))
+    conexao.commit()
     return transporte
 
-def update(media_agua, media_energia, media_residuos, transporte):
-    sql_cadastro = "INSERT INTO cadastro (nome, data, consumo_agua, consumo_energia, residuos_reciclavel, residuos_nao_reciclaveis, transporte) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-    dados_cadastro = (nome, data, consumo_agua, consumo_energia, geracao_residuos, geracao_residuos_nao_reciclaveis, transporte)
-    cursor.execute(sql_cadastro, dados_cadastro)
-    conexao.commit()
-    sql_sustentabilidade = "INSERT INTO sustentabilidade (nome, data, media_agua, media_energia, media_residuos, transporte) VALUES (%s, %s, %s, %s, %s, %s)"
-    dados_sustentabilidade = (nome, data, media_agua, media_energia, media_residuos, transporte)
-    cursor.execute(sql_sustentabilidade, dados_sustentabilidade)
-    conexao.commit()
-
-    last_id = cursor.lastrowid
-
 def cadastro():
-    global nome, data, consumo_agua, consumo_energia, geracao_residuos, geracao_residuos_nao_reciclaveis
     print("\n// Cadastro de Sustentabilidade //")
     nome = input("Digite o seu nome: ")
     nome = nome.title()
@@ -129,68 +131,82 @@ def cadastro():
     consumo_energia = float(input("Digite o seu consumo diário de energia (em kWh): "))
     geracao_residuos = int(input("Digite a porcentagem de geração de resíduos recicláveis: "))
     
-    media_agua = susten_agua(consumo_agua)
-    media_energia = susten_energia(consumo_energia)
-    media_residuos, geracao_residuos_nao_reciclaveis = susten_residuos(geracao_residuos)
+    susten_agua(consumo_agua)
+    susten_energia(consumo_energia)
+    nao_reciclavel = susten_residuos(geracao_residuos)
     transporte = susten_transporte()
-    update(media_agua, media_energia, media_residuos, transporte)
 
-def alterar_cadastro():
-    menu_cadastro = ""
-    print("\n// Alterar Cadastro //")
-    cursor.execute("SELECT * FROM cadastro WHERE id = %s", (last_id,))
-    linha = cursor.fetchone()
-    def mostrar_linha():
+    sql_cadastro = "INSERT INTO cadastro (nome, data, consumo_agua, consumo_energia, residuos_reciclavel, residuos_nao_reciclaveis, transporte) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    dados_cadastro = (nome, data, consumo_agua, consumo_energia, geracao_residuos, nao_reciclavel, transporte)
+    cursor.execute(sql_cadastro, dados_cadastro)
+    conexao.commit()
+    
+def mostrar_linha(linha):
         print(f"1. Nome: {linha[1]}\n"
               f"2. Data: {linha[2]}\n"
               f"3. Consumo Água: {linha[3]}\n"
               f"4. Consumo Energia: {linha[4]}\n"
               f"5. Resíduos Recicláveis: {linha[5]}\n"
               f"6. Resíduos Não Recicláveis: {linha[6]}\n"
-              f"7. Transporte: {linha[7]}\n\n")
-    mostrar_linha()
-    def update_linha(coluna):
-        sql_alterar = "UPDATE cadastro SET %s = '%s' WHERE id =",last_id
-        cursor.execute(sql_alterar, coluna, valor_cadastro)
-        conexao.commit
+              f"7. Transporte: {linha[7]}\n")
 
+def alterar_cadastro():
+    menu_cadastro = ""
+    print("\n// Alterar Cadastro //")
+    cursor.execute("SELECT * FROM cadastro WHERE id = %s", (last_id,))
+    linha = cursor.fetchone()
+    mostrar_linha(linha)
+    def update_linha(coluna, valor_cadastro):
+        sql_alterar = f"UPDATE cadastro SET {coluna} = %s WHERE id = %s"
+        cursor.execute(sql_alterar, (valor_cadastro, last_id))
+        conexao.commit()
+
+    print(f"Digite o número correspondente ao nome dado que deseja alterar (Ex: 1): ")
+    print("Digite \"Sair\" para sair.")
     while (menu_cadastro != "Sair"):
-        print(f"Digite o número correspondente ao nome dado que deseja alterar (Ex: 1): ")
-        print("Digite \"Sair\" para sair.")
         menu_cadastro = input("< Alterar >: ")
-        valor_cadastro = input("< Novo Dado >: ")
         menu_cadastro = menu_cadastro.title()
-        
-        if (menu_cadastro == "Sair"):
+        if (menu_cadastro != "Sair"):
             if (menu_cadastro == "1"):
-                valor_cadastro = valor_cadastro.title()
-                update_linha("nome")
+                valor_cadastro = input("< Novo Dado >: ")
+                update_linha("nome", valor_cadastro)
             elif (menu_cadastro == "2"):
-                update_linha("data")
-            elif (menu_cadastro == "3"):
-                update_linha("consumo_agua")
-                media_agua = susten_agua(consumo_agua=valor_cadastro)
-                update(media_agua)
-            elif (menu_cadastro == "4"):
-                update_linha("consumo_energia")
-                susten_energia(consumo_energia=valor_cadastro)
-            elif (menu_cadastro == "5"):
-                update_linha("residuos_reciclavel")
-                media_residuos = susten_residuos(geracao_residuos=valor_cadastro)
-                update(media_residuos)
-                valor_cadastro = 100 - valor_cadastro
-                update_linha("residuos_nao_reciclaveis")
-            elif (menu_cadastro == "6"):
-                update_linha("residuos_nao_reciclaveis")
-                valor_cadastro = 100 - valor_cadastro
-                update_linha("residuos_reciclavel")
-                media_residuos = susten_residuos(geracao_residuos=valor_cadastro)
-                update(media_residuos)
-            elif (menu_cadastro == "7"):
-                susten_transporte()
+                valor_cadastro = input("< Novo Dado >: ")
+                update_linha("data", valor_cadastro)
             else:
-                print(f"Opção Inválida!\nVerifique se digitou corretamente.")
+                valor_cadastro = int(input("< Novo Dado >: "))
+                if (menu_cadastro == "3"):
+                    update_linha("consumo_agua", valor_cadastro)
+                    susten_agua(valor_cadastro)
+                elif (menu_cadastro == "4"):
+                    update_linha("consumo_energia", valor_cadastro)
+                    susten_energia(valor_cadastro)
+                elif (menu_cadastro == "5"):
+                    update_linha("residuos_reciclavel", valor_cadastro)
+                    susten_residuos(valor_cadastro)
+                    update_linha("residuos_nao_reciclaveis", valor_cadastro)
+                elif (menu_cadastro == "6"):
+                    update_linha("residuos_nao_reciclaveis", valor_cadastro)
+                    valor_cadastro = 100 - valor_cadastro
+                    update_linha("residuos_reciclavel", valor_cadastro)
+                    susten_residuos(valor_cadastro)
+                elif (menu_cadastro == "7"):
+                    susten_transporte()
+                else:
+                    print(f"Opção Inválida!\nVerifique se digitou corretamente.")
 
+def excluir_cadastro():
+    print("\n// Excluir Cadastro //")
+    cursor.execute("SELECT * FROM cadastro WHERE id = %s", (last_id,))
+    linha = cursor.fetchone()
+    mostrar_linha(linha)
+    confirmacao = input("Deseja realmente excluir o cadastro? (S/N): ")
+    if (confirmacao.upper() == "S"):
+        cursor.execute("DELETE FROM cadastro WHERE id = %s", (last_id,))
+        conexao.commit()
+        print("Cadastro excluído com sucesso!\n")
+    else:
+        print("Cadastro não excluído.\n")
 
 print("// Cadastro de Sustentabilidade //")
 while (menu != "Sair"):
@@ -201,7 +217,19 @@ while (menu != "Sair"):
     menu = input("< Menu >: ")
     menu = menu.title()
 
-    if (menu == "1"):
-        cadastro()
-    elif (menu == "2"):
-        alterar_cadastro()
+    if (menu != "Sair"):
+        if (menu == "1"):
+            cadastro()
+            cursor.execute("SELECT MAX(id) FROM cadastro")
+            last_id = cursor.fetchone()[0]
+            ctrl_id += 1
+        elif (menu == "2"):
+            alterar_cadastro()
+        elif (menu == "3"):
+            if (ctrl_id == 0):
+                print("\nVocê não possuí um cadastro.\n")
+            else:
+                excluir_cadastro()
+                cursor.execute("SELECT MAX(id) FROM cadastro")
+                last_id = cursor.fetchone()[0]
+                ctrl_id -= 1
