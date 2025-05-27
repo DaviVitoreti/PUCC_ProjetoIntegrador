@@ -1,5 +1,5 @@
 import mysql.connector
-menu = ""
+from sympy import Matrix
 
 # Conexão com o banco de dados
 conexao = mysql.connector.connect(
@@ -10,6 +10,44 @@ conexao = mysql.connector.connect(
 )
 cursor = conexao.cursor()
 cursor.execute("USE sustentabilidade")
+
+# Matriz chave de Hill 2x2
+CHAVE_HILL = Matrix([[4, 3], [1, 2]])
+
+def hill_criptografar(texto):
+    texto = texto.upper().replace(" ", "")
+    if len(texto) % 2 != 0:
+        texto += 'X'  # Padding se necessário
+
+    numeros = [ord(c) - ord('A') for c in texto]
+    texto_cifrado = []
+
+    for i in range(0, len(numeros), 2):
+        vetor = Matrix([numeros[i], numeros[i+1]])
+        vetor_cifrado = CHAVE_HILL * vetor
+        vetor_cifrado = vetor_cifrado % 26
+        texto_cifrado.extend([chr(int(c) + ord('A')) for c in vetor_cifrado])
+
+    return ''.join(texto_cifrado)
+
+def hill_descriptografar(texto_cifrado):
+    chave_inversa = CHAVE_HILL.inv_mod(26)  # Se não for invertível, dará erro padrão do Python
+    numeros = [ord(c) - ord('A') for c in texto_cifrado]
+    texto_original = []
+
+    for i in range(0, len(numeros), 2):
+        vetor = Matrix([numeros[i], numeros[i+1]])
+        vetor_decifrado = chave_inversa * vetor
+        vetor_decifrado = vetor_decifrado % 26
+        texto_original.extend([chr(int(c) + ord('A')) for c in vetor_decifrado])
+
+    return ''.join(texto_original)
+
+def descriptografar_campo(campo):
+    # Descriptografa apenas se o campo for string e tiver só letras maiúsculas (Hill)
+    if isinstance(campo, str) and campo.isalpha() and campo.isupper():
+        return hill_descriptografar(campo)
+    return campo
 
 cursor.execute("""""""""
     CREATE TABLE IF NOT EXISTS cadastro (
@@ -36,74 +74,76 @@ cursor.execute("""""""""
     )
 """"""""")
 
+def pegar_ultimo_id():
+    cursor.execute("SELECT MAX(id) FROM cadastro")
+    last_id = cursor.fetchone()[0]
+    return last_id
+
 def susten_agua(consumo_agua):
-    if (consumo_agua < 150):
-        media_agua = "Alta Sustentabilidade"
-    elif (consumo_agua > 200):
-        media_agua = "Baixa Sustentabilidade"
+    if consumo_agua < 150:
+        media_agua = "ALTA"
+    elif consumo_agua > 200:
+        media_agua = "BAIXA"
     else:
-        media_agua = "Moderada Sustentabilidade"
-    return media_agua
+        media_agua = "MODERADA"
     
+    # Criptografar a classificação antes de retornar
+    return hill_criptografar(media_agua)
 
 def susten_energia(consumo_energia):
-    if (consumo_energia < 5):
-        media_energia = "Alta Sustetabilidade"
-    elif (consumo_energia > 10):
-        media_energia = "Baixa Sustetabilidade"
+    if consumo_energia < 5:
+        media_energia = "ALTA"
+    elif consumo_energia > 10:
+        media_energia = "BAIXA"
     else:
-        media_energia = "Moderada Sustetabilidade"
-    return media_energia
+        media_energia = "MODERADA"
+    
+    return hill_criptografar(media_energia)
 
 def susten_residuos(geracao_residuos):
     geracao_residuos_nao_reciclaveis = 100 - geracao_residuos
-    if (geracao_residuos_nao_reciclaveis < 50):
-        media_residuos = "Alta Sustetabilidade"
-    elif (geracao_residuos_nao_reciclaveis > 80):
-        media_residuos = "Baixa Sustetabilidade"
+    if geracao_residuos_nao_reciclaveis < 50:
+        media_residuos = "ALTA"
+    elif geracao_residuos_nao_reciclaveis > 80:
+        media_residuos = "BAIXA"
     else:
-        media_residuos = "Moderada Sustetabilidade"
-    return media_residuos, geracao_residuos_nao_reciclaveis
+        media_residuos = "MODERADA"
+    
+    return hill_criptografar(media_residuos), geracao_residuos_nao_reciclaveis
 
 def susten_transporte():
     cont_transporte_sustentavel = 0
     cont_transporte_nao_sustentavel = 0
-    # Considerar otimização com "for"
-    print("\nResponda as pergunta a seguir com S/N com base no seu uso diário")
-    transporte_publico = input("Você usa transporte público? ") 
-    bicicleta = input("Você usa bicicleta no seu dia a dia? ")
-    caminhada = input("Você caminha até os lugares? ")
-    carro_fossil = input("Você usa carro a combustível fóssil? ")
-    carro_eletrico = input("Você usa carro elétrico? ")
-    carona = input("Você pega caronas (fossil)? ")
+    
+    print("\nResponda as perguntas a seguir com S/N com base no seu uso diário")
+    transporte_publico = input("Você usa transporte público? ").upper()
+    bicicleta = input("Você usa bicicleta no seu dia a dia? ").upper()
+    caminhada = input("Você caminha até os lugares? ").upper()
+    carro_fossil = input("Você usa carro a combustível fóssil? ").upper()
+    carro_eletrico = input("Você usa carro elétrico? ").upper()
+    carona = input("Você pega caronas (fossil)? ").upper()
 
-    transporte_publico = transporte_publico.upper()
-    bicicleta = bicicleta.upper()
-    caminhada = caminhada.upper()
-    carro_fossil = carro_fossil.upper()
-    carro_eletrico = carro_eletrico.upper()
-    carona = carona.upper()
-
-    if (transporte_publico == "S"):
+    if transporte_publico == "S":
         cont_transporte_sustentavel += 1
-    if (carona == "S"):
+    if carona == "S":
         cont_transporte_nao_sustentavel += 1
-    if (bicicleta == "S"):
+    if bicicleta == "S":
         cont_transporte_sustentavel += 1
-    if (caminhada == "S"):
+    if caminhada == "S":
         cont_transporte_sustentavel += 1
-    if (carro_eletrico == "S"):
+    if carro_eletrico == "S":
         cont_transporte_sustentavel += 1
-    if (carro_fossil == "S"):
+    if carro_fossil == "S":
         cont_transporte_nao_sustentavel += 1
 
-    if (cont_transporte_sustentavel == 0):
-        transporte = "Baixa Sustentabilidade" 
-    elif (cont_transporte_nao_sustentavel == 0):
-        transporte = "Alta Sustentabilidade"
+    if cont_transporte_sustentavel == 0:
+        transporte = "BAIXA" 
+    elif cont_transporte_nao_sustentavel == 0:
+        transporte = "ALTA"
     else:   
-        transporte = "Moderada Sustentabilidade"
-    return transporte
+        transporte = "MODERADA"
+    
+    return hill_criptografar(transporte)
 
 def cadastro(id):
     print("\n// Cadastro de Sustentabilidade //")
@@ -120,7 +160,6 @@ def cadastro(id):
     cursor.execute(sql_cadastro, dados_cadastro)
     conexao.commit()
     
-    print(id)
     # Agora chama as funções de sustentabilidade que vão atualizar os dados
     agua = susten_agua(consumo_agua)
     energia = susten_energia(consumo_energia)
@@ -131,10 +170,14 @@ def cadastro(id):
     cursor.execute(sql, (nome, data, agua, energia, residuos, transporte))
     conexao.commit()
     
+    id = pegar_ultimo_id()
+
     # Atualiza os campos restantes no cadastro
     sql_update = "UPDATE cadastro SET residuos_nao_reciclaveis = %s, transporte = %s WHERE id = %s"
     cursor.execute(sql_update, (nao_reciclavel, transporte, id))
     conexao.commit()
+
+    print("\nCadastro realizado com sucesso!\n")
     
 def update_linha(tabela, coluna, valor_cadastro, id):
         sql_alterar = f"UPDATE {tabela} SET {coluna} = %s WHERE id = %s"
@@ -142,13 +185,20 @@ def update_linha(tabela, coluna, valor_cadastro, id):
         conexao.commit()
 
 def mostrar_linha(linha):
-        print(f"1. Nome: {linha[1]}\n"
-              f"2. Data: {linha[2]}\n"
-              f"3. Consumo Água: {linha[3]}\n"
-              f"4. Consumo Energia: {linha[4]}\n"
-              f"5. Resíduos Recicláveis: {linha[5]}\n"
-              f"6. Resíduos Não Recicláveis: {linha[6]}\n"
-              f"7. Transporte: {linha[7]}\n")
+    # Descriptografa os campos cifrados antes de exibir
+    nome = linha[1]
+    data = linha[2]
+    media_agua = descriptografar_campo(linha[3]).title() + " Sustentabilidade"
+    media_energia = descriptografar_campo(linha[4]).title() + " Sustentabilidade"
+    media_residuos = descriptografar_campo(linha[5]).title() + " Sustentabilidade"
+    media_transporte = descriptografar_campo(linha[6]).title() + " Sustentabilidade"
+
+    print(f"1. Nome: {nome}\n"
+          f"2. Data: {data}\n"
+          f"3. Média Água: {media_agua}\n"
+          f"4. Média Energia: {media_energia}\n"
+          f"5. Média Residuos: {media_residuos}\n"
+          f"6. Média Transporte: {media_transporte}\n")
 
 def alterar_cadastro(id):
     menu_cadastro = ""
@@ -200,6 +250,8 @@ def alterar_cadastro(id):
                         update_linha("sustentabilidade", "media_residuos", residuos, id)
                     else:
                         print(f"Opção Inválida!\nVerifique se digitou corretamente.")
+        print("\nCadastro alterado com sucesso!\n")
+
 
 def excluir_cadastro(id):
     print("\n// Excluir Cadastro //")
@@ -220,23 +272,41 @@ def excluir_cadastro(id):
     else:
         print("Cadastro não excluído.\n")
 
+def mostrar_cadastro(id):
+    if (id == None):
+        print("Nenhum cadastro encontrado.\n")
+        return
+
+    temp_id = id + 1
+    id = 1
+
+    while (id != temp_id):
+        cursor.execute("SELECT * FROM sustentabilidade WHERE id = %s", (id,))
+        linha = cursor.fetchone()
+        if (id != temp_id):
+            print(f"Cadastro {id}:")
+            mostrar_linha(linha)   
+        id += 1
+
+menu = ""
 print("// Cadastro de Sustentabilidade //")
 while (menu != "Sair"):
-    # Obtém o ID do último registro inserido
-    cursor.execute("SELECT MAX(id) FROM cadastro")
-    last_id = cursor.fetchone()[0]
+    id = pegar_ultimo_id()
 
     print(f"1. Cadastrar dados diários de sustentabilidade.")
     print(f"2. Alterar dados diários de sustentabilidade.")
     print(f"3. Excluir dados diários de sustentabilidade.")
+    print(f"4. Mostrar dados diários de sustentabilidade.")
     print(f"Digite \"Menu\" para mostrar este menu novamente.\nDigite \"Sair\" para encerrar o programa.")
     menu = input("< Menu >: ")
     menu = menu.title()
 
     if (menu != "Sair"):
         if (menu == "1"):
-            cadastro(last_id)
+            cadastro(id)
         elif (menu == "2"):
-            alterar_cadastro(last_id)
+            alterar_cadastro(id)
         elif (menu == "3"):
-            excluir_cadastro(last_id)
+            excluir_cadastro(id)
+        elif (menu == "4"):
+            mostrar_cadastro(id)
