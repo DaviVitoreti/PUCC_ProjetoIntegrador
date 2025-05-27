@@ -41,6 +41,9 @@ def hill_descriptografar(texto_cifrado):
         vetor_decifrado = vetor_decifrado % 26
         texto_original.extend([chr(int(c) + ord('A')) for c in vetor_decifrado])
 
+    if (texto_original[-1] == "X"):
+        texto_original = texto_original[:-1]
+
     return ''.join(texto_original)
 
 def descriptografar_campo(campo):
@@ -209,7 +212,16 @@ def alterar_cadastro(id):
 
     cursor.execute("SELECT * FROM cadastro WHERE id = %s", (id,))
     linha = cursor.fetchone()
-    mostrar_linha(linha)
+    transporte = descriptografar_campo(linha[7]).title() + " Sustentabilidade"
+
+    print(f"/ id = {id} /\n"
+        f"1. Nome: {linha[1]}\n"
+        f"2. Data: {linha[2]}\n"
+        f"3. Consumo de Água: {linha[3]} L\n"
+        f"4. Consumo de Energia: {linha[4]} kWh\n"
+        f"5. Resíduos Recicláveis: {linha[5]} %\n"
+        f"6. Resíduos Não Recicláveis: {linha[6]} %\n"
+        f"7. Transporte: {transporte}\n")
 
     print(f"Digite o número correspondente ao nome dado que deseja alterar (Ex: 1): ")
     print("Digite \"Sair\" para sair.")
@@ -262,7 +274,17 @@ def excluir_cadastro(id):
 
     cursor.execute("SELECT * FROM cadastro WHERE id = %s", (id,))
     linha = cursor.fetchone()
-    mostrar_linha(linha)
+    transporte = descriptografar_campo(linha[7]).title() + " Sustentabilidade"
+
+    print(f"/ id = {id} /\n"
+        f"1. Nome: {linha[1]}\n"
+        f"2. Data: {linha[2]}\n"
+        f"3. Consumo de Água: {linha[3]} L\n"
+        f"4. Consumo de Energia: {linha[4]} kWh\n"
+        f"5. Resíduos Recicláveis: {linha[5]} %\n"
+        f"6. Resíduos Não Recicláveis: {linha[6]} %\n"
+        f"7. Transporte: {transporte}\n")
+    
     confirmacao = input("Deseja realmente excluir o cadastro? (S/N): ")
 
     if (confirmacao.upper() == "S"):
@@ -273,6 +295,7 @@ def excluir_cadastro(id):
         print("Cadastro não excluído.\n")
 
 def mostrar_cadastro(id):
+    print("\n// Mostrar Cadastro //")
     if (id == None):
         print("Nenhum cadastro encontrado.\n")
         return
