@@ -8,50 +8,13 @@ conexao = mysql.connector.connect(
     password="JDM7Fqv",
     database="sustentabilidade"
 )
+
+# Cria e usar o banco de dados
 cursor = conexao.cursor()
+cursor.execute("CREATE DATABASE IF NOT EXISTS sustentabilidade")
 cursor.execute("USE sustentabilidade")
 
-# Matriz chave de Hill 2x2
-CHAVE_HILL = Matrix([[4, 3], [1, 2]])
-
-def hill_criptografar(texto):
-    texto = texto.upper().replace(" ", "")
-    if len(texto) % 2 != 0:
-        texto += 'X'  # Padding se necessário
-
-    numeros = [ord(c) - ord('A') for c in texto]
-    texto_cifrado = []
-
-    for i in range(0, len(numeros), 2):
-        vetor = Matrix([numeros[i], numeros[i+1]])
-        vetor_cifrado = CHAVE_HILL * vetor
-        vetor_cifrado = vetor_cifrado % 26
-        texto_cifrado.extend([chr(int(c) + ord('A')) for c in vetor_cifrado])
-
-    return ''.join(texto_cifrado)
-
-def hill_descriptografar(texto_cifrado):
-    chave_inversa = CHAVE_HILL.inv_mod(26)  # Se não for invertível, dará erro padrão do Python
-    numeros = [ord(c) - ord('A') for c in texto_cifrado]
-    texto_original = []
-
-    for i in range(0, len(numeros), 2):
-        vetor = Matrix([numeros[i], numeros[i+1]])
-        vetor_decifrado = chave_inversa * vetor
-        vetor_decifrado = vetor_decifrado % 26
-        texto_original.extend([chr(int(c) + ord('A')) for c in vetor_decifrado])
-
-    if (texto_original[-1] == "X"):
-        texto_original = texto_original[:-1]
-
-    return ''.join(texto_original)
-
-def descriptografar_campo(campo):
-    # Descriptografa apenas se o campo for string e tiver só letras maiúsculas (Hill)
-    if isinstance(campo, str) and campo.isalpha() and campo.isupper():
-        return hill_descriptografar(campo)
-    return campo
-
+# Criação das tabelas se não existirem
 cursor.execute("""""""""
     CREATE TABLE IF NOT EXISTS cadastro (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -77,11 +40,56 @@ cursor.execute("""""""""
     )
 """"""""")
 
+# Matriz chave de Hill 2x2
+CHAVE_HILL = Matrix([[4, 3], [1, 2]])
+
+# Criptografia Hill
+def hill_criptografar(texto):
+    texto = texto.upper().replace(" ", "")
+    if len(texto) % 2 != 0:
+        texto += 'X'  # Padding se necessário
+
+    numeros = [ord(c) - ord('A') for c in texto]
+    texto_cifrado = []
+
+    for i in range(0, len(numeros), 2):
+        vetor = Matrix([numeros[i], numeros[i+1]])
+        vetor_cifrado = CHAVE_HILL * vetor
+        vetor_cifrado = vetor_cifrado % 26
+        texto_cifrado.extend([chr(int(c) + ord('A')) for c in vetor_cifrado])
+
+    return ''.join(texto_cifrado)
+
+# Descriptografia Hill
+def hill_descriptografar(texto_cifrado):
+    chave_inversa = CHAVE_HILL.inv_mod(26)  # Se não for invertível, dará erro padrão do Python
+    numeros = [ord(c) - ord('A') for c in texto_cifrado]
+    texto_original = []
+
+    for i in range(0, len(numeros), 2):
+        vetor = Matrix([numeros[i], numeros[i+1]])
+        vetor_decifrado = chave_inversa * vetor
+        vetor_decifrado = vetor_decifrado % 26
+        texto_original.extend([chr(int(c) + ord('A')) for c in vetor_decifrado])
+
+    if (texto_original[-1] == "X"):
+        texto_original = texto_original[:-1]
+
+    return ''.join(texto_original)
+
+def descriptografar_campo(campo):
+    # Descriptografa apenas se o campo for string e tiver só letras maiúsculas (Hill)
+    if isinstance(campo, str) and campo.isalpha() and campo.isupper():
+        return hill_descriptografar(campo)
+    return campo
+
+# Funções para pegar o último ID
 def pegar_ultimo_id():
     cursor.execute("SELECT MAX(id) FROM cadastro")
     last_id = cursor.fetchone()[0]
     return last_id
 
+# Calcula as médias de água
 def susten_agua(consumo_agua):
     if consumo_agua < 150:
         media_agua = "ALTA"
@@ -93,6 +101,7 @@ def susten_agua(consumo_agua):
     # Criptografar a classificação antes de retornar
     return hill_criptografar(media_agua)
 
+# Calcula as médias de energia
 def susten_energia(consumo_energia):
     if consumo_energia < 5:
         media_energia = "ALTA"
@@ -103,6 +112,7 @@ def susten_energia(consumo_energia):
     
     return hill_criptografar(media_energia)
 
+# Calcula as médias de resíduos
 def susten_residuos(geracao_residuos):
     geracao_residuos_nao_reciclaveis = 100 - geracao_residuos
     if geracao_residuos_nao_reciclaveis < 50:
@@ -114,6 +124,7 @@ def susten_residuos(geracao_residuos):
     
     return hill_criptografar(media_residuos), geracao_residuos_nao_reciclaveis
 
+# Calcula as médias de transporte
 def susten_transporte():
     cont_transporte_sustentavel = 0
     cont_transporte_nao_sustentavel = 0
@@ -148,6 +159,7 @@ def susten_transporte():
     
     return hill_criptografar(transporte)
 
+# Função para cadastrar os dados de sustentabilidade
 def cadastro(id):
     print("\n// Cadastro de Sustentabilidade //")
     nome = input("Digite o seu nome: ")
@@ -181,12 +193,14 @@ def cadastro(id):
     conexao.commit()
 
     print("\nCadastro realizado com sucesso!\n")
-    
+
+# Função para atualizar uma linha específica na tabela
 def update_linha(tabela, coluna, valor_cadastro, id):
         sql_alterar = f"UPDATE {tabela} SET {coluna} = %s WHERE id = %s"
         cursor.execute(sql_alterar, (valor_cadastro, id))
         conexao.commit()
 
+# Funções para mostrar os dados do cadastro
 def mostrar_cadastro_diario(linha):
     nome = linha[1]
     data = linha[2]
@@ -202,6 +216,7 @@ def mostrar_cadastro_diario(linha):
           f"5. Resíduos Recicláveis: {residuos_reciclavel} %\n"
           f"6. Resíduos Não Recicláveis: {residuos_nao_reciclaveis} %\n")
 
+# Função para mostrar as médias dos parâmetros
 def mostrar_medias(linha):
     media_agua = descriptografar_campo(linha[3]).title() + " Sustentabilidade"
     media_energia = descriptografar_campo(linha[4]).title() + " Sustentabilidade"
@@ -213,6 +228,7 @@ def mostrar_medias(linha):
           f"3. Média Residuos: {media_residuos}\n"
           f"4. Média Transporte: {media_transporte}\n")
 
+# Funções para alterar
 def alterar_cadastro(id):
     menu_cadastro = ""
     print("\n// Alterar Cadastro //")
@@ -274,7 +290,7 @@ def alterar_cadastro(id):
                         print(f"Opção Inválida!\nVerifique se digitou corretamente.")
         print("\nCadastro alterado com sucesso!\n")
 
-
+# Função para excluir um cadastro específico
 def excluir_cadastro(id):
     print("\n// Excluir Cadastro //")
 
@@ -304,6 +320,7 @@ def excluir_cadastro(id):
     else:
         print("Cadastro não excluído.\n")
 
+# Mostrar todos os cadastros
 def mostrar_cadastro(id):
     print("\n// Mostrar Cadastro //")
     if (id == None):
@@ -328,6 +345,7 @@ def mostrar_cadastro(id):
         id += 1
 
 menu = ""
+# Menu principal
 print("// Cadastro de Sustentabilidade //")
 while (menu != "Sair"):
     id = pegar_ultimo_id()
