@@ -235,8 +235,8 @@ def alterar_cadastro(id):
     cursor.execute("SELECT * FROM cadastro WHERE id = %s", (id,))
     linha = cursor.fetchone()
 
-    if (linha[0] == None):
-        print("Nenhum cadastro encontrado.\n")
+    if (linha == None):
+        print("Nenhum cadastro encontrado.")
         return
     
     transporte = descriptografar_campo(linha[7]).title() + " Sustentabilidade"
@@ -297,14 +297,13 @@ def alterar_cadastro(id):
 
 # Função para excluir um cadastro específico
 def excluir_cadastro(id):
-    print("\n// Excluir Cadastro //")
-
-    if (id == None):
-        print("Nenhum cadastro encontrado.\n")
-        return
-
     cursor.execute("SELECT * FROM cadastro WHERE id = %s", (id,))
     linha = cursor.fetchone()
+
+    if (linha == None):
+        print("Nenhum cadastro encontrado.")
+        return
+    
     transporte = descriptografar_campo(linha[7]).title() + " Sustentabilidade"
 
     print(f"/ id = {id} /\n"
@@ -321,9 +320,9 @@ def excluir_cadastro(id):
     if (confirmacao.upper() == "S"):
         cursor.execute("DELETE FROM cadastro WHERE id = %s", (id,))
         conexao.commit()
-        print("Cadastro excluído com sucesso!\n")
+        print("Cadastro excluído com sucesso!")
     else:
-        print("Cadastro não excluído.\n")
+        print("Cadastro não excluído.")
 
 # Mostrar todos os cadastros
 def mostrar_cadastro(id):
@@ -372,6 +371,8 @@ while (menu != "Sair"):
             id = int(input("Digite o ID do cadastro que deseja alterar: "))
             alterar_cadastro(id)
         elif (menu == "3"):
+            print("\n// Excluir Cadastro //")
+            id = int(input("Digite o ID do cadastro que deseja alterar: "))
             excluir_cadastro(id)
         elif (menu == "4"):
             mostrar_cadastro(id)
