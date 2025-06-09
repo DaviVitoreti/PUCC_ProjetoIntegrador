@@ -192,7 +192,7 @@ def cadastro(id):
     cursor.execute(sql_update, (nao_reciclavel, transporte, id))
     conexao.commit()
 
-    print("\nCadastro realizado com sucesso!\n")
+    print("\nCadastro realizado com sucesso!")
 
 # Função para atualizar uma linha específica na tabela
 def update_linha(tabela, coluna, valor_cadastro, id):
@@ -231,27 +231,31 @@ def mostrar_medias(linha):
 # Funções para alterar
 def alterar_cadastro(id):
     menu_cadastro = ""
-    print("\n// Alterar Cadastro //")
-    if (id == None):
-        print("Nenhum cadastro encontrado.\n")
-        return
 
     cursor.execute("SELECT * FROM cadastro WHERE id = %s", (id,))
     linha = cursor.fetchone()
+
+    if (linha[0] == None):
+        print("Nenhum cadastro encontrado.\n")
+        return
+    
     transporte = descriptografar_campo(linha[7]).title() + " Sustentabilidade"
 
-    print(f"/ id = {id} /\n"
-        f"1. Nome: {linha[1]}\n"
-        f"2. Data: {linha[2]}\n"
-        f"3. Consumo de Água: {linha[3]}L\n"
-        f"4. Consumo de Energia: {linha[4]}kWh\n"
-        f"5. Resíduos Recicláveis: {linha[5]}%\n"
-        f"6. Resíduos Não Recicláveis: {linha[6]}%\n"
-        f"7. Transporte: {transporte}\n")
+    def printar_linhas(linha):
+        print(f"\n/ id = {id} /\n"
+            f"1. Nome: {linha[1]}\n"
+            f"2. Data: {linha[2]}\n"
+            f"3. Consumo de Água: {linha[3]}L\n"
+            f"4. Consumo de Energia: {linha[4]}kWh\n"
+            f"5. Resíduos Recicláveis: {linha[5]}%\n"
+            f"6. Resíduos Não Recicláveis: {linha[6]}%\n"
+            f"7. Transporte: {transporte}\n")
 
-    print(f"Digite o número correspondente ao nome dado que deseja alterar (Ex: 1): ")
+    print(f"\nDigite o número correspondente ao nome dado que deseja alterar (Ex: 1): ")
     print("Digite \"Sair\" para sair.")
     while (menu_cadastro != "Sair"):
+        printar_linhas(linha)
+
         menu_cadastro = input("< Alterar >: ")
         menu_cadastro = menu_cadastro.title()
         if (menu_cadastro != "Sair"):
@@ -288,7 +292,8 @@ def alterar_cadastro(id):
                         update_linha("sustentabilidade", "media_residuos", residuos, id)
                     else:
                         print(f"Opção Inválida!\nVerifique se digitou corretamente.")
-        print("\nCadastro alterado com sucesso!\n")
+        print("\nCadastro alterado com sucesso!")
+        menu_cadastro = input("Digite \"Sair\" para sair ou pressione Enter para continuar: ")
 
 # Função para excluir um cadastro específico
 def excluir_cadastro(id):
@@ -324,7 +329,7 @@ def excluir_cadastro(id):
 def mostrar_cadastro(id):
     print("\n// Mostrar Cadastro //")
     if (id == None):
-        print("Nenhum cadastro encontrado.\n")
+        print("Nenhum cadastro encontrado.")
         return
 
     temp_id = id + 1
@@ -350,6 +355,7 @@ print("// Cadastro de Sustentabilidade //")
 while (menu != "Sair"):
     id = pegar_ultimo_id()
 
+    print("\n// Menu //")
     print(f"1. Cadastrar dados diários de sustentabilidade.")
     print(f"2. Alterar dados diários de sustentabilidade.")
     print(f"3. Excluir dados diários de sustentabilidade.")
@@ -362,6 +368,8 @@ while (menu != "Sair"):
         if (menu == "1"):
             cadastro(id)
         elif (menu == "2"):
+            print("\n// Alterar Cadastro //")
+            id = int(input("Digite o ID do cadastro que deseja alterar: "))
             alterar_cadastro(id)
         elif (menu == "3"):
             excluir_cadastro(id)
