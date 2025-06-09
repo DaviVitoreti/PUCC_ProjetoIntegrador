@@ -187,21 +187,31 @@ def update_linha(tabela, coluna, valor_cadastro, id):
         cursor.execute(sql_alterar, (valor_cadastro, id))
         conexao.commit()
 
-def mostrar_linha(linha):
-    # Descriptografa os campos cifrados antes de exibir
+def mostrar_cadastro_diario(linha):
     nome = linha[1]
     data = linha[2]
+    consumo_agua = linha[3]
+    consumo_energia = linha[4]
+    residuos_reciclavel = linha[5]
+    residuos_nao_reciclaveis = linha[6]
+
+    print(f"1. Nome: {nome}\n"
+          f"2. Data: {data}\n"
+          f"3. Consumo de Água: {consumo_agua} L\n"
+          f"4. Consumo de Energia: {consumo_energia} kWh\n"
+          f"5. Resíduos Recicláveis: {residuos_reciclavel} %\n"
+          f"6. Resíduos Não Recicláveis: {residuos_nao_reciclaveis} %\n")
+
+def mostrar_medias(linha):
     media_agua = descriptografar_campo(linha[3]).title() + " Sustentabilidade"
     media_energia = descriptografar_campo(linha[4]).title() + " Sustentabilidade"
     media_residuos = descriptografar_campo(linha[5]).title() + " Sustentabilidade"
     media_transporte = descriptografar_campo(linha[6]).title() + " Sustentabilidade"
 
-    print(f"1. Nome: {nome}\n"
-          f"2. Data: {data}\n"
-          f"3. Média Água: {media_agua}\n"
-          f"4. Média Energia: {media_energia}\n"
-          f"5. Média Residuos: {media_residuos}\n"
-          f"6. Média Transporte: {media_transporte}\n")
+    print(f"1. Média Água: {media_agua}\n"
+          f"2. Média Energia: {media_energia}\n"
+          f"3. Média Residuos: {media_residuos}\n"
+          f"4. Média Transporte: {media_transporte}\n")
 
 def alterar_cadastro(id):
     menu_cadastro = ""
@@ -217,10 +227,10 @@ def alterar_cadastro(id):
     print(f"/ id = {id} /\n"
         f"1. Nome: {linha[1]}\n"
         f"2. Data: {linha[2]}\n"
-        f"3. Consumo de Água: {linha[3]} L\n"
-        f"4. Consumo de Energia: {linha[4]} kWh\n"
-        f"5. Resíduos Recicláveis: {linha[5]} %\n"
-        f"6. Resíduos Não Recicláveis: {linha[6]} %\n"
+        f"3. Consumo de Água: {linha[3]}L\n"
+        f"4. Consumo de Energia: {linha[4]}kWh\n"
+        f"5. Resíduos Recicláveis: {linha[5]}%\n"
+        f"6. Resíduos Não Recicláveis: {linha[6]}%\n"
         f"7. Transporte: {transporte}\n")
 
     print(f"Digite o número correspondente ao nome dado que deseja alterar (Ex: 1): ")
@@ -305,10 +315,16 @@ def mostrar_cadastro(id):
 
     while (id != temp_id):
         cursor.execute("SELECT * FROM sustentabilidade WHERE id = %s", (id,))
-        linha = cursor.fetchone()
+        linha1 = cursor.fetchone()
+        cursor.execute("SELECT * FROM cadastro WHERE id = %s", (id,))
+        linha2 = cursor.fetchone()
         if (id != temp_id):
-            print(f"Cadastro {id}:")
-            mostrar_linha(linha)   
+            print(f"// Cadastro id N°{id} //:")
+            print(f"-- Cadastro Diário --")
+            mostrar_cadastro_diario(linha2)
+            print(f"-- Médias dos parâmetros --")
+            mostrar_medias(linha1)
+            print("-----\n")
         id += 1
 
 menu = ""
