@@ -4,8 +4,8 @@ from sympy import Matrix
 # Conexão com o banco de dados
 conexao = mysql.connector.connect(
     host="localhost",
-    user="root",
-    password="oq9,4pi!=uaCVRP",
+    user="Davi",
+    password="JDM7Fqv",
     database="sustentabilidade"
 )
 
@@ -345,7 +345,7 @@ def mostrar_cadastro(id):
             mostrar_cadastro_diario(linha2)
             print(f"-- Médias dos parâmetros --")
             mostrar_medias(linha1)
-            print("-----\n")
+            print("-----")
         id += 1
 
 menu = ""
@@ -359,7 +359,7 @@ while (menu != "Sair"):
     print(f"2. Alterar dados diários de sustentabilidade.")
     print(f"3. Excluir dados diários de sustentabilidade.")
     print(f"4. Mostrar dados diários de sustentabilidade.")
-    print(f"Digite \"Menu\" para mostrar este menu novamente.\nDigite \"Sair\" para encerrar o programa.")
+    print(f"Digite \"Sair\" para encerrar o programa.")
     menu = input("< Menu >: ")
     menu = menu.title()
 
