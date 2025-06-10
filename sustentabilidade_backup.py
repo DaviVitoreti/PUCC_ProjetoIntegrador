@@ -4,8 +4,8 @@ from sympy import Matrix
 # Conexão com o banco de dados
 conexao = mysql.connector.connect(
     host="localhost",
-    user="root",
-    password="oq9,4pi!=uaCVRP",
+    user="Davi",
+    password="JDM7Fqv",
     database="sustentabilidade"
 )
 
@@ -281,14 +281,14 @@ def alterar_cadastro(id):
                         update_linha("sustentabilidade", "media_energia", energia, id)
                     elif (menu_cadastro == "5"):
                         update_linha("cadastro", "residuos_reciclavel", valor_cadastro, id)
-                        residuos, _ = susten_residuos(valor_cadastro)
+                        residuos = susten_residuos(valor_cadastro)
                         update_linha("sustentabilidade", "media_residuos", residuos, id)
                         update_linha("cadastro", "residuos_nao_reciclaveis", valor_cadastro, id)
                     elif (menu_cadastro == "6"):
                         update_linha("cadastro", "residuos_nao_reciclaveis", valor_cadastro, id)
                         valor_cadastro = 100 - valor_cadastro
                         update_linha("cadastro", "residuos_reciclavel", valor_cadastro, id)
-                        residuos, _ = susten_residuos(valor_cadastro)
+                        residuos = susten_residuos(valor_cadastro)
                         update_linha("sustentabilidade", "media_residuos", residuos, id)
                     else:
                         print(f"Opção Inválida!\nVerifique se digitou corretamente.")
@@ -339,7 +339,7 @@ def mostrar_cadastro(id):
         linha1 = cursor.fetchone()
         cursor.execute("SELECT * FROM cadastro WHERE id = %s", (id,))
         linha2 = cursor.fetchone()
-        if linha1 is not None and linha2 is not None:
+        if (id != temp_id):
             print(f"// Cadastro id N°{id} //:")
             print(f"-- Cadastro Diário --")
             mostrar_cadastro_diario(linha2)
@@ -376,5 +376,3 @@ while (menu != "Sair"):
             excluir_cadastro(id)
         elif (menu == "4"):
             mostrar_cadastro(id)
-        else:
-            print("Opção inválida! Digite novamente.")
